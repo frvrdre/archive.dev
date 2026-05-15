@@ -60,7 +60,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     audio.volume = volumeState;
   }, []);
 
-  // 🔄 SYNC TRACK CHANGE
+  // 🔄 SYNC TRACK CHANGE (AUTO PLAY IF WAS PLAYING)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -70,6 +70,13 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     audio.volume = volumeState;
 
     setCurrentTime(0);
+
+    if (isPlaying) {
+      audio.play().catch((err) => {
+        console.log("Autoplay blocked:", err);
+        setIsPlaying(false);
+      });
+    }
   }, [trackIndex]);
 
   // 🔊 VOLUME
@@ -112,7 +119,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     else play();
   };
 
-  // ⏭ NEXT
+  // ⏭ NEXT (AUTO PLAYS)
   const nextTrack = async () => {
     const next = (trackIndex + 1) % tracks.length;
     setTrackIndex(next);
@@ -127,11 +134,12 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       await audio.play();
       setIsPlaying(true);
     } catch (err) {
-      console.log(err);
+      console.log("Next track blocked:", err);
+      setIsPlaying(false);
     }
   };
 
-  // ⏮ PREV
+  // ⏮ PREV (AUTO PLAYS)
   const prevTrack = async () => {
     const prev = (trackIndex - 1 + tracks.length) % tracks.length;
     setTrackIndex(prev);
@@ -146,7 +154,8 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       await audio.play();
       setIsPlaying(true);
     } catch (err) {
-      console.log(err);
+      console.log("Prev track blocked:", err);
+      setIsPlaying(false);
     }
   };
 
@@ -154,7 +163,6 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const seek = (time: number) => {
     const audio = audioRef.current;
     if (!audio) return;
-
     audio.currentTime = time;
   };
 
