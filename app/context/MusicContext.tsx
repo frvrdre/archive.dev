@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useRef, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
 
 type Track = {
   name: string;
@@ -38,73 +44,143 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
   const [trackIndex, setTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.25);
+  const [volumeState, setVolumeState] = useState(0.25);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
   const track = tracks[trackIndex];
 
-  // play
-  const play = async () => {
+  // 🔊 INIT AUDIO
+  useEffect(() => {
     if (!audioRef.current) return;
+    audioRef.current.src = track.src;
+    audioRef.current.volume = volumeState;
+  }, []);
 
+  // 🎯 KEEP TRACK IN SYNC
+  useEffect(() => {
     const audio = audioRef.current;
+    if (!audio) return;
 
     audio.src = track.src;
-    audio.volume = volume;
+    audio.load();
+    audio.volume = volumeState;
+
+    setCurrentTime(0);
+  }, [trackIndex]);
+
+  // 🔓 CLICK ANYWHERE UNLOCK (FIX)
+  useEffect(() => {
+    const unlock = async () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      try {
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+        setIsPlaying(false);
+      } catch {}
+    };
+
+    const handleFirstClick = () => {
+      unlock();
+      window.removeEventListener("click", handleFirstClick);
+    };
+
+    window.addEventListener("click", handleFirstClick);
+
+    return () => {
+      window.removeEventListener("click", handleFirstClick);
+    };
+  }, []);
+
+  // ▶️ PLAY
+  const play = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.src = track.src;
+    audio.volume = volumeState;
 
     try {
       await audio.play();
       setIsPlaying(true);
-    } catch {
-      setIsPlaying(false);
+    } catch (err) {
+      console.log("Play blocked:", err);
     }
   };
 
-  // pause
+  // ⏸ PAUSE
   const pause = () => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    audioRef.current.pause();
+    audio.pause();
     setIsPlaying(false);
   };
 
-  // toggle
+  // 🔁 TOGGLE
   const togglePlay = () => {
     if (isPlaying) pause();
     else play();
   };
 
-  // next
-  const nextTrack = () => {
+  // ⏭ NEXT
+  const nextTrack = async () => {
     const next = (trackIndex + 1) % tracks.length;
     setTrackIndex(next);
 
-    if (audioRef.current) {
-      audioRef.current.src = tracks[next].src;
-      audioRef.current.play().then(() => setIsPlaying(true));
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.src = tracks[next].src;
+    audio.load();
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.log(err);
     }
   };
 
-  // prev
-  const prevTrack = () => {
+  // ⏮ PREV
+  const prevTrack = async () => {
     const prev = (trackIndex - 1 + tracks.length) % tracks.length;
     setTrackIndex(prev);
 
-    if (audioRef.current) {
-      audioRef.current.src = tracks[prev].src;
-      audioRef.current.play().then(() => setIsPlaying(true));
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.src = tracks[prev].src;
+    audio.load();
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.log(err);
     }
   };
 
-  // seek
+  // ⏩ SEEK
   const seek = (time: number) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = time;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = time;
   };
 
-  // time sync
+  // 🔊 VOLUME
+  const setVolume = (v: number) => {
+    setVolumeState(v);
+    if (audioRef.current) {
+      audioRef.current.volume = v;
+    }
+  };
+
+  // ⏱ TIME SYNC
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -129,7 +205,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         tracks,
         trackIndex,
         isPlaying,
-        volume,
+        volume: volumeState,
         currentTime,
         duration,
         togglePlay,
@@ -139,7 +215,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
         seek,
       }}
     >
-      <audio ref={audioRef} />
+      <audio ref={audioRef} preload="metadata" />
       {children}
     </MusicContext.Provider>
   );
