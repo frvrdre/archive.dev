@@ -51,16 +51,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
   const track = tracks[trackIndex];
 
-  // 🎧 INIT AUDIO
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.src = track.src;
-    audio.volume = volumeState;
-  }, []);
-
-  // 🔄 SYNC TRACK CHANGE (AUTO PLAY IF WAS PLAYING)
+  // 🎧 AUDIO SYNC (single source of truth)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -68,12 +59,10 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     audio.src = track.src;
     audio.load();
     audio.volume = volumeState;
-
-    setCurrentTime(0);
+    audio.currentTime = 0;
 
     if (isPlaying) {
-      audio.play().catch((err) => {
-        console.log("Autoplay blocked:", err);
+      audio.play().catch(() => {
         setIsPlaying(false);
       });
     }
@@ -91,9 +80,6 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const play = async () => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    audio.src = track.src;
-    audio.volume = volumeState;
 
     try {
       await audio.play();
@@ -119,44 +105,14 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     else play();
   };
 
-  // ⏭ NEXT (AUTO PLAYS)
-  const nextTrack = async () => {
-    const next = (trackIndex + 1) % tracks.length;
-    setTrackIndex(next);
-
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.src = tracks[next].src;
-    audio.load();
-
-    try {
-      await audio.play();
-      setIsPlaying(true);
-    } catch (err) {
-      console.log("Next track blocked:", err);
-      setIsPlaying(false);
-    }
+  // ⏭ NEXT (ONLY changes index)
+  const nextTrack = () => {
+    setTrackIndex((prev) => (prev + 1) % tracks.length);
   };
 
-  // ⏮ PREV (AUTO PLAYS)
-  const prevTrack = async () => {
-    const prev = (trackIndex - 1 + tracks.length) % tracks.length;
-    setTrackIndex(prev);
-
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.src = tracks[prev].src;
-    audio.load();
-
-    try {
-      await audio.play();
-      setIsPlaying(true);
-    } catch (err) {
-      console.log("Prev track blocked:", err);
-      setIsPlaying(false);
-    }
+  // ⏮ PREV (ONLY changes index)
+  const prevTrack = () => {
+    setTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
   };
 
   // ⏩ SEEK
