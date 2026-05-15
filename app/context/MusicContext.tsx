@@ -51,14 +51,16 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 
   const track = tracks[trackIndex];
 
-  // 🔊 INIT AUDIO
+  // 🎧 INIT AUDIO
   useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.src = track.src;
-    audioRef.current.volume = volumeState;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.src = track.src;
+    audio.volume = volumeState;
   }, []);
 
-  // 🎯 KEEP TRACK IN SYNC
+  // 🔄 SYNC TRACK CHANGE
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -70,31 +72,13 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
     setCurrentTime(0);
   }, [trackIndex]);
 
-  // 🔓 CLICK ANYWHERE UNLOCK (FIX)
-  useEffect(() => {
-    const unlock = async () => {
-      const audio = audioRef.current;
-      if (!audio) return;
-
-      try {
-        await audio.play();
-        audio.pause();
-        audio.currentTime = 0;
-        setIsPlaying(false);
-      } catch {}
-    };
-
-    const handleFirstClick = () => {
-      unlock();
-      window.removeEventListener("click", handleFirstClick);
-    };
-
-    window.addEventListener("click", handleFirstClick);
-
-    return () => {
-      window.removeEventListener("click", handleFirstClick);
-    };
-  }, []);
+  // 🔊 VOLUME
+  const setVolume = (v: number) => {
+    setVolumeState(v);
+    if (audioRef.current) {
+      audioRef.current.volume = v;
+    }
+  };
 
   // ▶️ PLAY
   const play = async () => {
@@ -109,6 +93,7 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       setIsPlaying(true);
     } catch (err) {
       console.log("Play blocked:", err);
+      setIsPlaying(false);
     }
   };
 
@@ -169,15 +154,8 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   const seek = (time: number) => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.currentTime = time;
-  };
 
-  // 🔊 VOLUME
-  const setVolume = (v: number) => {
-    setVolumeState(v);
-    if (audioRef.current) {
-      audioRef.current.volume = v;
-    }
+    audio.currentTime = time;
   };
 
   // ⏱ TIME SYNC
