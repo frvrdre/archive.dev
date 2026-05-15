@@ -16,7 +16,7 @@ type Track = {
 
 const tracks: Track[] = [
   { name: "Always have a choice", artist: "Havoc", src: "/music/Havoc - Always have a choice.mp3" },
-  { name: "Slow Down", artist: "Lucki", src: "/music/Lucki - Slow Down.mp3" },
+  { name: "Slow Down", artist: "Lucki", src: "/music/Lucki - Slow down.mp3" },
   { name: "Hesitating", artist: "Malcolm Todd", src: "/music/Malcolm Todd - Hesitating.mp3" },
   { name: "Lay Me Down", artist: "Steve Lacy", src: "/music/Steve Lacy - Lay Me Down.mp3" },
 ];
