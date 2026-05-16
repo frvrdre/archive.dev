@@ -380,6 +380,16 @@ const resources: Resource[] = [
   use: "Advanced styling system.",
   bestWith: ["CSS", "React"],
 },
+  {
+  name: "Coolors",
+  category: "Styling",
+  description: "Color theme selector.",
+  url: "hhttps://coolors.co/",
+  domain: "coolors.co",
+  tags: ["CSS"],
+  use: "Advanced themes.",
+  bestWith: ["CSS", "React"],
+},
 ];
 
 const getIcon = (domain: string) =>
